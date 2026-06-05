@@ -1,0 +1,128 @@
+// Schéma StageConnect — voir REFERENCES.md §6
+// Prisma 7 : l'URL de connexion est dans prisma.config.ts (plus de url/directUrl ici)
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  STUDENT
+  COMPANY
+  ADMIN
+}
+
+enum JobType {
+  STAGE
+  ALTERNANCE
+  CDI
+  CDD
+  FREELANCE
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  INTERVIEW
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(STUDENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student          Student?
+  company          Company?
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+}
+
+model Student {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  firstName   String
+  lastName    String
+  phone       String?
+  ville       String?
+  bio         String?
+  skills      String[]
+  photoUrl    String?
+  cvUrl       String?
+  formations  Json?
+  experiences Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applications Application[]
+}
+
+model Company {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  name        String
+  secteur     String?
+  ville       String?
+  description String?
+  logoUrl     String?
+  website     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobs Job[]
+}
+
+model Job {
+  id          String   @id @default(uuid())
+  companyId   String
+  title       String
+  description String
+  type        JobType
+  ville       String?
+  secteur     String?
+  duration    String?
+  salary      String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  applications Application[]
+}
+
+model Application {
+  id          String            @id @default(uuid())
+  studentId   String
+  jobId       String
+  status      ApplicationStatus @default(PENDING)
+  coverLetter String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  job     Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, jobId]) // un étudiant ne peut postuler qu'une fois par offre
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  senderId       String
+  receiverId     String
+  conversationId String
+  content        String
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+}
