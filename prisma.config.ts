@@ -11,6 +11,8 @@ export default defineConfig({
   datasource: {
     // Connexion DIRECTE (non poolée) — utilisée par le CLI pour les migrations (requis Neon).
     // Le client runtime utilise DATABASE_URL (pooler) via l'adapter pg (src/lib/prisma.ts).
-    url: env('DIRECT_URL'),
+    // process.env utilisé directement : env() lève une erreur si la variable est absente,
+    // ce qui fait échouer `prisma generate` même sans connexion réelle.
+    url: process.env.DIRECT_URL ?? 'postgresql://placeholder:placeholder@localhost/placeholder',
   },
 })

@@ -1,4 +1,91 @@
-// Controllers auth — TODO Phase 1+ : implementer (cf. contrat API dans REFERENCES.md SS5)
-// Convention : chaque fonction async, reponse via res.status(...).json({ success, data, message })
-// Erreurs : throw new HttpError(code, message) -> middleware d'erreur centralise
-export {}
+import bcrypt from 'bcrypt'
+import { Request, Response } from 'express'
+
+import { HttpError } from '../lib/errors'
+import { createToken } from '../lib/jwt'
+import { prisma } from '../lib/prisma'
+
+export async function register(req: Request, res: Response): Promise<void> {
+  const { email, password, role, firstName, lastName, name } = req.body as {
+    email: string
+    password: string
+    role: string
+    firstName?: string
+    lastName?: string
+    name?: string
+  }
+
+  if (!['STUDENT', 'COMPANY'].includes(role)) {
+    throw new HttpError(400, 'Rôle invalide : STUDENT ou COMPANY attendu')
+  }
+  if (role === 'STUDENT' && (!firstName || !lastName)) {
+    throw new HttpError(400, 'Champs requis manquants : firstName, lastName')
+  }
+  if (role === 'COMPANY' && !name) {
+    throw new HttpError(400, 'Champs requis manquants : name')
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email } })
+  if (existing) throw new HttpError(409, 'Email déjà utilisé')
+
+  const hashed = await bcrypt.hash(password, 10)
+
+  const user = await prisma.user.create({
+    data: {
+      email,
+      password: hashed,
+      role: role as 'STUDENT' | 'COMPANY',
+      ...(role === 'STUDENT'
+        ? { student: { create: { firstName: firstName!, lastName: lastName! } } }
+        : { company: { create: { name: name! } } }),
+    },
+    include: { student: true, company: true },
+  })
+
+  const token = createToken(user.id, user.role)
+  const { password: _pwd, ...userWithoutPassword } = user
+
+  res.status(201).json({
+    success: true,
+    data: { token, user: userWithoutPassword },
+    message: 'Compte créé avec succès',
+  })
+}
+
+export async function login(req: Request, res: Response): Promise<void> {
+  const { email, password } = req.body as { email: string; password: string }
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: { student: true, company: true },
+  })
+  if (!user) throw new HttpError(401, 'Email ou mot de passe incorrect')
+
+  const valid = await bcrypt.compare(password, user.password)
+  if (!valid) throw new HttpError(401, 'Email ou mot de passe incorrect')
+
+  const token = createToken(user.id, user.role)
+  const { password: _pwd, ...userWithoutPassword } = user
+
+  res.json({
+    success: true,
+    data: { token, user: userWithoutPassword },
+    message: 'Connexion réussie',
+  })
+}
+
+export async function me(req: Request, res: Response): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { id: req.user!.userId },
+    include: { student: true, company: true },
+  })
+  if (!user) throw new HttpError(404, 'Utilisateur introuvable')
+
+  const { password: _pwd, ...userWithoutPassword } = user
+
+  res.json({
+    success: true,
+    data: userWithoutPassword,
+    message: 'Profil récupéré',
+  })
+}
