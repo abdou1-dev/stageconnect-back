@@ -1,0 +1,87 @@
+// Application Express — séparée du démarrage serveur (src/index.ts)
+// pour être importable par la suite de tests (supertest) sans ouvrir de port.
+import cors from 'cors'
+import express from 'express'
+import rateLimit from 'express-rate-limit'
+import helmet from 'helmet'
+
+import adminRoutes from './routes/admin.routes'
+import applicationsRoutes from './routes/applications.routes'
+import authRoutes from './routes/auth.routes'
+import companiesRoutes from './routes/companies.routes'
+import jobsRoutes from './routes/jobs.routes'
+import messagesRoutes from './routes/messages.routes'
+import studentsRoutes from './routes/students.routes'
+import uploadRoutes from './routes/upload.routes'
+
+import { errorHandler, notFound } from './middlewares/error.middleware'
+
+const app = express()
+
+// Headers de sécurité HTTP (X-Content-Type-Options, HSTS, etc.)
+app.use(helmet())
+
+// CORS restreint à l'origine du front uniquement (CLIENT_URL)
+// `||` et non `??` : couvre aussi la variable définie mais vide
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    credentials: true,
+  })
+)
+app.use(express.json())
+
+// Anti brute-force sur le login : 20 tentatives max par IP toutes les 15 minutes.
+// (Relevé de 5 → 20 le 06/06 : plusieurs évaluateurs peuvent tester derrière
+// la même IP pendant la démo — 5 était trop strict.)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  // Réponse au format d'erreur standard de l'API
+  handler: (_req, res) => {
+    res.status(429).json({
+      success: false,
+      error: 'Trop de tentatives de connexion. Réessayez dans 15 minutes.',
+      code: 429,
+    })
+  },
+})
+app.use('/api/auth/login', loginLimiter)
+
+// Anti-spam de création de comptes : 10 inscriptions max par IP par heure
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({
+      success: false,
+      error: 'Trop de créations de comptes. Réessayez dans une heure.',
+      code: 429,
+    })
+  },
+})
+app.use('/api/auth/register', registerLimiter)
+
+// Health check — utilisé par Render et pour vérifier que l'API tourne
+app.get('/api/health', (_req, res) => {
+  res.json({ success: true, data: { status: 'ok' }, message: 'API opérationnelle' })
+})
+
+app.use('/api/auth', authRoutes)
+app.use('/api/students', studentsRoutes)
+app.use('/api/companies', companiesRoutes)
+app.use('/api/jobs', jobsRoutes)
+app.use('/api/applications', applicationsRoutes)
+app.use('/api/messages', messagesRoutes)
+app.use('/api/upload', uploadRoutes)
+app.use('/api/admin', adminRoutes)
+
+// 404 puis gestion d'erreur centralisée — toujours en dernier
+app.use(notFound)
+app.use(errorHandler)
+
+export default app
