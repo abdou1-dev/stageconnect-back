@@ -1,8 +1,21 @@
-// Routes /api/applications — TODO Phase 1+ : brancher les controllers
 import { Router } from 'express'
+
+import {
+  apply,
+  jobApplications,
+  myApplications,
+  updateApplicationStatus,
+} from '../controllers/applications.controller'
+import { requireAuth } from '../middlewares/auth.middleware'
+import { requireRole } from '../middlewares/role.middleware'
+import { requireFields } from '../middlewares/validate.middleware'
 
 const router = Router()
 
-// Exemple : router.post('/', requireAuth, requireRole('COMPANY'), createapplications)
+// /mine AVANT /:id pour éviter que Express interprète "mine" comme un id
+router.get('/mine', requireAuth, requireRole('STUDENT'), myApplications)
+router.get('/job/:jobId', requireAuth, requireRole('COMPANY'), jobApplications)
+router.post('/', requireAuth, requireRole('STUDENT'), requireFields('jobId'), apply)
+router.put('/:id/status', requireAuth, requireRole('COMPANY'), requireFields('status'), updateApplicationStatus)
 
 export default router
