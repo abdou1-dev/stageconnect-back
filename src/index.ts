@@ -32,10 +32,12 @@ app.use(
 )
 app.use(express.json())
 
-// Anti brute-force sur le login : 5 tentatives max par IP toutes les 15 minutes
+// Anti brute-force sur le login : 20 tentatives max par IP toutes les 15 minutes.
+// (Relevé de 5 → 20 le 06/06 : plusieurs évaluateurs peuvent tester derrière
+// la même IP pendant la démo — 5 était trop strict.)
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 5,
+  limit: 20,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   // Réponse au format d'erreur standard de l'API
