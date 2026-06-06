@@ -90,7 +90,8 @@ export async function getJob(req: Request, res: Response): Promise<void> {
     where: { id },
     include: {
       company: {
-        select: { id: true, name: true, logoUrl: true, ville: true, secteur: true, website: true },
+        // userId : nécessaire au front pour le bouton « Contacter » (messagerie)
+        select: { id: true, userId: true, name: true, logoUrl: true, ville: true, secteur: true, website: true },
       },
       _count: { select: { applications: true } },
     },

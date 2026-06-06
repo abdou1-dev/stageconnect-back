@@ -95,6 +95,8 @@ export async function jobApplications(req: Request, res: Response): Promise<void
         student: {
           select: {
             id: true,
+            // userId : nécessaire au front pour le bouton « Contacter » (messagerie)
+            userId: true,
             firstName: true,
             lastName: true,
             ville: true,
