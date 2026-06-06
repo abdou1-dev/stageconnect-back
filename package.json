@@ -8,7 +8,8 @@
     "build": "prisma generate && tsc",
     "start": "node dist/index.js",
     "postinstall": "prisma generate",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "keywords": [],
   "author": "",
@@ -37,10 +38,13 @@
     "@types/multer": "^2.1.0",
     "@types/node": "^25.9.1",
     "@types/pg": "^8.20.0",
+    "@types/supertest": "^7.2.0",
     "nodemon": "^3.1.14",
     "prisma": "^7.8.0",
+    "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
   },
   "overrides": {
     "@hono/node-server": "^1.19.13"
