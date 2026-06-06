@@ -86,6 +86,31 @@ export async function login(req: Request, res: Response): Promise<void> {
   })
 }
 
+export async function changePassword(req: Request, res: Response): Promise<void> {
+  const { currentPassword, newPassword } = req.body as {
+    currentPassword: string
+    newPassword: string
+  }
+
+  if (typeof newPassword !== 'string' || newPassword.length < 8) {
+    throw new HttpError(400, 'Le nouveau mot de passe doit contenir au moins 8 caractères')
+  }
+  if (currentPassword === newPassword) {
+    throw new HttpError(400, 'Le nouveau mot de passe doit être différent de l\'ancien')
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: req.user!.userId } })
+  if (!user) throw new HttpError(404, 'Utilisateur introuvable')
+
+  const valid = await bcrypt.compare(currentPassword, user.password)
+  if (!valid) throw new HttpError(401, 'Mot de passe actuel incorrect')
+
+  const hashed = await bcrypt.hash(newPassword, 10)
+  await prisma.user.update({ where: { id: user.id }, data: { password: hashed } })
+
+  res.json({ success: true, data: null, message: 'Mot de passe mis à jour' })
+}
+
 export async function me(req: Request, res: Response): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { id: req.user!.userId },
