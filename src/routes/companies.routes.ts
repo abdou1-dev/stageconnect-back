@@ -1,8 +1,12 @@
-// Routes /api/companies — TODO Phase 1+ : brancher les controllers
 import { Router } from 'express'
+
+import { getCompany, listCompanies, updateCompany } from '../controllers/companies.controller'
+import { requireAuth } from '../middlewares/auth.middleware'
 
 const router = Router()
 
-// Exemple : router.post('/', requireAuth, requireRole('COMPANY'), createcompanies)
+router.get('/', listCompanies)
+router.get('/:id', getCompany)
+router.put('/:id', requireAuth, updateCompany)
 
 export default router

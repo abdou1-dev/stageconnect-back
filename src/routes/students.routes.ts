@@ -1,8 +1,13 @@
-// Routes /api/students — TODO Phase 1+ : brancher les controllers
 import { Router } from 'express'
+
+import { getStudent, listStudents, updateStudent } from '../controllers/students.controller'
+import { requireAuth } from '../middlewares/auth.middleware'
+import { requireRole } from '../middlewares/role.middleware'
 
 const router = Router()
 
-// Exemple : router.post('/', requireAuth, requireRole('COMPANY'), createstudents)
+router.get('/', requireAuth, requireRole('ADMIN', 'COMPANY'), listStudents)
+router.get('/:id', requireAuth, getStudent)
+router.put('/:id', requireAuth, updateStudent)
 
 export default router
