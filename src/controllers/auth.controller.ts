@@ -18,6 +18,10 @@ export async function register(req: Request, res: Response): Promise<void> {
   if (!['STUDENT', 'COMPANY'].includes(role)) {
     throw new HttpError(400, 'Rôle invalide : STUDENT ou COMPANY attendu')
   }
+  // Ne jamais faire confiance au client : le front valide aussi, on revalide ici
+  if (typeof password !== 'string' || password.length < 8) {
+    throw new HttpError(400, 'Le mot de passe doit contenir au moins 8 caractères')
+  }
   if (role === 'STUDENT' && (!firstName || !lastName)) {
     throw new HttpError(400, 'Champs requis manquants : firstName, lastName')
   }
