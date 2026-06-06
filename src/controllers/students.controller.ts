@@ -26,16 +26,19 @@ export async function updateStudent(req: Request, res: Response): Promise<void> 
     throw new HttpError(403, 'Accès refusé : vous ne pouvez modifier que votre propre profil')
   }
 
-  const { firstName, lastName, phone, ville, bio, skills, formations, experiences } = req.body as {
-    firstName?: string
-    lastName?: string
-    phone?: string
-    ville?: string
-    bio?: string
-    skills?: string[]
-    formations?: Prisma.InputJsonValue
-    experiences?: Prisma.InputJsonValue
-  }
+  const { firstName, lastName, phone, ville, bio, skills, formations, experiences, photoUrl, cvUrl } =
+    req.body as {
+      firstName?: string
+      lastName?: string
+      phone?: string
+      ville?: string
+      bio?: string
+      skills?: string[]
+      formations?: Prisma.InputJsonValue
+      experiences?: Prisma.InputJsonValue
+      photoUrl?: string
+      cvUrl?: string
+    }
 
   const updated = await prisma.student.update({
     where: { id },
@@ -48,6 +51,8 @@ export async function updateStudent(req: Request, res: Response): Promise<void> 
       ...(skills !== undefined && { skills }),
       ...(formations !== undefined && { formations }),
       ...(experiences !== undefined && { experiences }),
+      ...(photoUrl !== undefined && { photoUrl }),
+      ...(cvUrl !== undefined && { cvUrl }),
     },
   })
 

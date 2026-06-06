@@ -33,12 +33,13 @@ export async function updateCompany(req: Request, res: Response): Promise<void> 
     throw new HttpError(403, 'Accès refusé : vous ne pouvez modifier que votre propre fiche')
   }
 
-  const { name, secteur, ville, description, website } = req.body as {
+  const { name, secteur, ville, description, website, logoUrl } = req.body as {
     name?: string
     secteur?: string
     ville?: string
     description?: string
     website?: string
+    logoUrl?: string
   }
 
   const updated = await prisma.company.update({
@@ -49,6 +50,7 @@ export async function updateCompany(req: Request, res: Response): Promise<void> 
       ...(ville !== undefined && { ville }),
       ...(description !== undefined && { description }),
       ...(website !== undefined && { website }),
+      ...(logoUrl !== undefined && { logoUrl }),
     },
   })
 
