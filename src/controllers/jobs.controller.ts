@@ -46,6 +46,34 @@ export async function listJobs(req: Request, res: Response): Promise<void> {
   })
 }
 
+// Offres de l'entreprise connectée — y compris inactives (gestion), avec
+// le nombre de candidatures par offre.
+export async function listMyJobs(req: Request, res: Response): Promise<void> {
+  const company = await prisma.company.findUnique({ where: { userId: req.user!.userId } })
+  if (!company) throw new HttpError(404, 'Profil entreprise introuvable')
+
+  const page = Math.max(1, Number(req.query.page ?? 1))
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit ?? 10)))
+  const skip = (page - 1) * limit
+
+  const [jobs, total] = await prisma.$transaction([
+    prisma.job.findMany({
+      where: { companyId: company.id },
+      skip,
+      take: limit,
+      include: { _count: { select: { applications: true } } },
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.job.count({ where: { companyId: company.id } }),
+  ])
+
+  res.json({
+    success: true,
+    data: { jobs, total, page, limit },
+    message: 'Offres récupérées',
+  })
+}
+
 export async function getJob(req: Request, res: Response): Promise<void> {
   const id = req.params.id as string
 
