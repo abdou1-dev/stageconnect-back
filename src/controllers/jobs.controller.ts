@@ -9,9 +9,10 @@ export async function listJobs(req: Request, res: Response): Promise<void> {
   const limit = Math.min(50, Math.max(1, Number(req.query.limit ?? 10)))
   const skip = (page - 1) * limit
 
-  const type = typeof req.query.type === 'string' ? req.query.type : undefined
-  const ville = typeof req.query.ville === 'string' ? req.query.ville : undefined
+  const type    = typeof req.query.type    === 'string' ? req.query.type    : undefined
+  const ville   = typeof req.query.ville   === 'string' ? req.query.ville   : undefined
   const secteur = typeof req.query.secteur === 'string' ? req.query.secteur : undefined
+  const q       = typeof req.query.q       === 'string' ? req.query.q.trim() : undefined
 
   if (type && !Object.values(JobType).includes(type as JobType)) {
     throw new HttpError(400, `Type invalide. Valeurs acceptées : ${Object.values(JobType).join(', ')}`)
@@ -19,9 +20,17 @@ export async function listJobs(req: Request, res: Response): Promise<void> {
 
   const where = {
     isActive: true,
-    ...(type && { type: type as JobType }),
-    ...(ville && { ville: { contains: ville, mode: 'insensitive' as const } }),
+    ...(type    && { type: type as JobType }),
+    ...(ville   && { ville:   { contains: ville,   mode: 'insensitive' as const } }),
     ...(secteur && { secteur: { contains: secteur, mode: 'insensitive' as const } }),
+    // Recherche texte libre : titre OU description OU secteur
+    ...(q && {
+      OR: [
+        { title:       { contains: q, mode: 'insensitive' as const } },
+        { description: { contains: q, mode: 'insensitive' as const } },
+        { secteur:     { contains: q, mode: 'insensitive' as const } },
+      ],
+    }),
   }
 
   const [jobs, total] = await prisma.$transaction([
