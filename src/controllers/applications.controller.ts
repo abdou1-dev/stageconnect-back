@@ -116,6 +116,27 @@ export async function jobApplications(req: Request, res: Response): Promise<void
   })
 }
 
+export async function cancelApplication(req: Request, res: Response): Promise<void> {
+  const id = req.params.id as string
+
+  const student = await prisma.student.findUnique({ where: { userId: req.user!.userId } })
+  if (!student) throw new HttpError(404, 'Profil étudiant introuvable')
+
+  const application = await prisma.application.findUnique({ where: { id } })
+  if (!application) throw new HttpError(404, 'Candidature introuvable')
+
+  if (application.studentId !== student.id) {
+    throw new HttpError(403, 'Accès refusé : cette candidature ne vous appartient pas')
+  }
+  if (application.status !== 'PENDING') {
+    throw new HttpError(400, 'Seule une candidature en attente (PENDING) peut être annulée')
+  }
+
+  await prisma.application.delete({ where: { id } })
+
+  res.json({ success: true, data: null, message: 'Candidature annulée' })
+}
+
 export async function updateApplicationStatus(req: Request, res: Response): Promise<void> {
   const id = req.params.id as string
   const { status } = req.body as { status: string }

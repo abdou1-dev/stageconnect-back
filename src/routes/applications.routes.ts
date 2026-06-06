@@ -2,6 +2,7 @@ import { Router } from 'express'
 
 import {
   apply,
+  cancelApplication,
   jobApplications,
   myApplications,
   updateApplicationStatus,
@@ -16,6 +17,7 @@ const router = Router()
 router.get('/mine', requireAuth, requireRole('STUDENT'), myApplications)
 router.get('/job/:jobId', requireAuth, requireRole('COMPANY'), jobApplications)
 router.post('/', requireAuth, requireRole('STUDENT'), requireFields('jobId'), apply)
+router.delete('/:id', requireAuth, requireRole('STUDENT'), cancelApplication)
 router.put('/:id/status', requireAuth, requireRole('COMPANY'), requireFields('status'), updateApplicationStatus)
 
 export default router
