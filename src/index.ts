@@ -13,6 +13,7 @@ import companiesRoutes from './routes/companies.routes'
 import jobsRoutes from './routes/jobs.routes'
 import messagesRoutes from './routes/messages.routes'
 import studentsRoutes from './routes/students.routes'
+import uploadRoutes from './routes/upload.routes'
 
 import { errorHandler, notFound } from './middlewares/error.middleware'
 
@@ -75,6 +76,7 @@ app.use('/api/companies', companiesRoutes)
 app.use('/api/jobs', jobsRoutes)
 app.use('/api/applications', applicationsRoutes)
 app.use('/api/messages', messagesRoutes)
+app.use('/api/upload', uploadRoutes)
 app.use('/api/admin', adminRoutes)
 
 // 404 puis gestion d'erreur centralisée — toujours en dernier
