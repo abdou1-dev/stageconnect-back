@@ -19,6 +19,14 @@ export async function sendMessage(req: Request, res: Response): Promise<void> {
   const senderId = req.user!.userId
   const { receiverId, content } = req.body as { receiverId: string; content: string }
 
+  // Borne la taille des messages — protège la DB d'un client direct malveillant
+  if (typeof content !== 'string' || content.trim().length === 0) {
+    throw new HttpError(400, 'Le message ne peut pas être vide')
+  }
+  if (content.length > 2000) {
+    throw new HttpError(400, 'Message trop long : 2000 caractères maximum')
+  }
+
   if (senderId === receiverId) {
     throw new HttpError(400, 'Vous ne pouvez pas vous envoyer un message à vous-même')
   }
