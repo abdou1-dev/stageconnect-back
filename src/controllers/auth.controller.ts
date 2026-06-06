@@ -68,6 +68,14 @@ export async function login(req: Request, res: Response): Promise<void> {
   const valid = await bcrypt.compare(password, user.password)
   if (!valid) throw new HttpError(401, 'Email ou mot de passe incorrect')
 
+  // Modération : les comptes sanctionnés ne peuvent plus se connecter
+  if (user.status === 'BANNED') {
+    throw new HttpError(403, 'Ce compte a été banni. Contactez l’équipe StageConnect.')
+  }
+  if (user.status === 'SUSPENDED') {
+    throw new HttpError(403, 'Ce compte est suspendu temporairement. Contactez l’équipe StageConnect.')
+  }
+
   const token = createToken(user.id, user.role)
   const { password: _pwd, ...userWithoutPassword } = user
 
