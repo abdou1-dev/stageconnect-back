@@ -48,6 +48,22 @@ const loginLimiter = rateLimit({
 })
 app.use('/api/auth/login', loginLimiter)
 
+// Anti-spam de création de comptes : 10 inscriptions max par IP par heure
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({
+      success: false,
+      error: 'Trop de créations de comptes. Réessayez dans une heure.',
+      code: 429,
+    })
+  },
+})
+app.use('/api/auth/register', registerLimiter)
+
 // Health check — utilisé par Render et pour vérifier que l'API tourne
 app.get('/api/health', (_req, res) => {
   res.json({ success: true, data: { status: 'ok' }, message: 'API opérationnelle' })
